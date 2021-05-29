@@ -14,10 +14,10 @@ from firebase_admin import firestore
 model = None  #model
 db = None     #database-firestore
 folder = '/tmp/'
-image_path = None
-date = None
-file_name = None
-value = None
+image_path = ""
+date = ""
+file_name = ""
+value = ""
 
 # Download model file from cloud storage bucket
 def download_model_file():
@@ -85,6 +85,9 @@ def firestore_initi():
 
 
 def sl_predict(event, context):
+    
+    #download image to predict
+    download_image(event, context)
 
     #stop when wrong file uploaded
     if '.jpg' not in file_name:
@@ -96,9 +99,7 @@ def sl_predict(event, context):
         download_model_file()
         model = tf.keras.models.load_model('/tmp/model.h5')
     
-    #download image to predict
-    download_image(event, context)
-
+    
     #initialize firestore
     firestore_initi()
 
@@ -112,92 +113,64 @@ def sl_predict(event, context):
     classes = model.predict(images, batch_size=10)
     index_max = np.argmax(classes)
 
-    print("\n")
-    print(fn)
-    print(classes)
-    print(index_max)
     if index_max == 0:
         value = 'A'
-        print("A")
     elif index_max == 1:
         value = 'B'
-        print("B")
     elif index_max == 2:
         value = 'C'
-        print("C")
     elif index_max == 3:
         value = 'D'
-        print("D")
     elif index_max == 4:
         value = 'E'
-        print("E")
     elif index_max == 5:
         value = 'F'
-        print("F")
     elif index_max == 6:
         value = 'G'
-        print("G")
     elif index_max == 7:
         value = 'H'
-        print("H")
     elif index_max == 8:
         value = 'I'
-        print("I")
     elif index_max == 9:
         value = 'J'
-        print("J")
     elif index_max == 10:
         value = 'K'
-        print("K")
     elif index_max == 11:
         value = 'L'
-        print("L")
     elif index_max == 12:
         value = 'M'
-        print("M")
     elif index_max == 13:
         value = 'N'
-        print("N")
     elif index_max == 14:
         value = 'O'
-        print("O")
     elif index_max == 15:
         value = 'P'
-        print("P")
     elif index_max == 16:
         value = 'Q'
-        print("Q")
     elif index_max == 17:
         value = 'R'
-        print("R")
     elif index_max == 18:
         value = 'S'
-        print("S")
     elif index_max == 19:
         value = 'T'
-        print("T")
     elif index_max == 20:
         value = 'U'
-        print("U")
     elif index_max == 21:
         value = 'V'
-        print("V")
     elif index_max == 22:
         value = 'W'
-        print("W")
     elif index_max == 23:
         value = 'X'
-        print("X")
     elif index_max == 24:
         value = 'Y'
-        print("Y")
     elif index_max == 25:
         value = 'Z'
-        print("Z")
-    print("\n")
 
     #update firestore
     doc_ref = db.collection(u'sign-language').document(date)
     doc_ref.set({
         file_name: value
     }, merge=True)
+    print(file_name + '\n')
+    print(date + '\n')
+    print(value + '\n')
