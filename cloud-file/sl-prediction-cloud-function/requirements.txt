@@ -6,3 +6,4 @@ tensorflow
 google-cloud-storage>=1.38.0
 opencv-python
 firebase-admin
+Pillow

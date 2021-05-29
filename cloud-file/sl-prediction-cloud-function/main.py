@@ -9,13 +9,14 @@ import cv2
 import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
+import PIL.Image
 
 ## Global variable
 model = None  #model
-db = None     #database-firestore
+db = None
 image_path = ""
-date = ""
-file_name = ""
+datee = ""
+file_nama = ""
 value = ""
 
 # Download model file from cloud storage bucket
@@ -49,7 +50,7 @@ def download_image(event, context):
 
     file = event
     # Model Bucket details
-    BUCKET_NAME        = "prototype-testing-sl-1"
+    BUCKET_NAME        = "white-device-312612.appspot.com"
     PROJECT_ID         = "white-device-312612"
     GCS_IMAGE_FILE     = file['name']
 
@@ -71,21 +72,10 @@ def download_image(event, context):
     blob.download_to_filename(image_path)
 
     #adding function split name
-    global file_name
-    global date
-    file_name = file['name']
-    date = re.split("[\- | /]", file_name) #use date[-2]
-
-
-def firestore_initi():
-
-    # Use the application default credentials
-    cred = credentials.ApplicationDefault()
-    firebase_admin.initialize_app(cred, {
-      'projectId': 'white-device-312612',
-    })
-    
-    db = firestore.client()
+    global file_nama
+    global datee
+    file_nama = file['name']
+    datee = file_nama.split('-') #use datee[-2]
 
 
 def sl_predict(event, context):
@@ -94,7 +84,7 @@ def sl_predict(event, context):
     download_image(event, context)
 
     #stop when wrong file uploaded
-    if '.jpg' not in file_name:
+    if '.jpg' not in file_nama:
         return 0
 
     #deploy model locally
@@ -107,7 +97,13 @@ def sl_predict(event, context):
     #initialize firestore
     global db
     if not db:
-        firestore_initi()
+        # Use the application default credentials
+        cred = credentials.ApplicationDefault()
+        firebase_admin.initialize_app(cred, {
+            'projectId': 'white-device-312612',
+        })
+    
+    db = firestore.client()
 
     #image process
     img = image.load_img(image_path, grayscale=True, target_size=(28, 28))
@@ -174,10 +170,10 @@ def sl_predict(event, context):
         value = 'Z'
 
     #update firestore
-    doc_ref = db.collection(u'sign-language').document(date)
+    doc_ref = db.collection(u'sign-language').document(datee[-2])
     doc_ref.set({
-        file_name: value
+        file_nama: value
     }, merge=True)
-    print(file_name + '\n')
-    print(date + '\n')
+    print(file_nama + '\n')
+    print(datee[-2] + '\n')
     print(value + '\n')
