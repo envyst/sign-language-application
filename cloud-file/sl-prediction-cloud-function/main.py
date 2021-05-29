@@ -13,7 +13,6 @@ from firebase_admin import firestore
 ## Global variable
 model = None  #model
 db = None     #database-firestore
-folder = '/tmp/'
 image_path = ""
 date = ""
 file_name = ""
@@ -38,6 +37,7 @@ def download_model_file():
     # Create a blob object from the filepath
     blob     = bucket.blob(GCS_MODEL_FILE)
     
+    folder = '/tmp/'
     if not os.path.exists(folder):
         os.makedirs(folder)
     # Download the file to a destination
@@ -62,13 +62,17 @@ def download_image(event, context):
     # Create a blob object from the filepath
     blob     = bucket.blob(GCS_IMAGE_FILE)
     
+    folder = '/tmp/'
     if not os.path.exists(folder):
         os.makedirs(folder)
     # Download the file to a destination
+    global image_path
     image_path = folder + GCS_IMAGE_FILE
     blob.download_to_filename(image_path)
 
     #adding function split name
+    global file_name
+    global date
     file_name = file['name']
     date = re.split("[\- | /]", file_name) #use date[-2]
 
@@ -101,7 +105,9 @@ def sl_predict(event, context):
     
     
     #initialize firestore
-    firestore_initi()
+    global db
+    if not db:
+        firestore_initi()
 
     #image process
     img = image.load_img(image_path, grayscale=True, target_size=(28, 28))
@@ -112,6 +118,7 @@ def sl_predict(event, context):
     images = np.vstack([x])
     classes = model.predict(images, batch_size=10)
     index_max = np.argmax(classes)
+    global value
 
     if index_max == 0:
         value = 'A'
