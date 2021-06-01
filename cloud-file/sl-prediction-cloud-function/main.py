@@ -172,7 +172,7 @@ def sl_predict(event, context):
     #update firestore
     doc_ref = db.collection(u'sign-language').document(datee[-2])
     doc_ref.set({
-        file_nama: value
+        file_nama.strip('.jpg'): value
     }, merge=True)
     print(file_nama + '\n')
     print(datee[-2] + '\n')
