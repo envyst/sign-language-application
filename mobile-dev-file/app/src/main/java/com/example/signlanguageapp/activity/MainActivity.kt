@@ -1,39 +1,27 @@
-package com.example.signlanguageapp
+package com.example.signlanguageapp.activity
 
 import android.Manifest
-import android.content.ContentResolver
-import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.graphics.Matrix
-import android.hardware.camera2.CameraAccessException
-import android.hardware.camera2.CameraCharacteristics
-import android.hardware.camera2.CameraManager
-import android.media.ExifInterface
 import android.net.Uri
-import android.net.wifi.WifiManager
-import android.os.Build
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
-import android.text.format.Formatter
 import android.util.Log
-import android.view.Surface
+import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.ViewModelProvider
+import com.example.signlanguageapp.R
 import com.example.signlanguageapp.databinding.ActivityMainBinding
+import com.example.signlanguageapp.viewModel.MainViewModel
+import com.example.signlanguageapp.viewModel.ViewModelFactory
 import com.google.firebase.firestore.DocumentChange
-import com.google.firebase.firestore.DocumentSnapshot
-import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
-import com.google.firebase.storage.UploadTask
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -44,8 +32,6 @@ import java.util.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
-typealias LumaListener = (luma: Double) -> Unit
-
 class MainActivity : AppCompatActivity() {
 
     private var imageCapture: ImageCapture? = null
@@ -53,11 +39,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var outputDirectory: File
     private lateinit var cameraExecutor: ExecutorService
-    private lateinit var ipAdd: String
-
-    //Firebase
+    private lateinit var viewModel: MainViewModel
     private lateinit var storageRef: StorageReference
-    private val db = Firebase.firestore
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -68,26 +51,27 @@ class MainActivity : AppCompatActivity() {
 
         storageRef = FirebaseStorage.getInstance().reference
 
-        val wm: WifiManager = applicationContext.getSystemService(WIFI_SERVICE) as WifiManager
-        ipAdd = Formatter.formatIpAddress(wm.connectionInfo.ipAddress)
-        Log.d("Get IP", ipAdd)
-
         // Request camera permissions
         if (allPermissionsGranted()) {
             startCamera()
         } else {
             ActivityCompat.requestPermissions(
-                this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS)
+                this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS
+            )
         }
 
         // Set up the listener for take photo
-        binding.btnCapture.setOnClickListener { takePhoto() }
-        
-//        binding.switchCamera.setOnClickListener { swapCamera() }
+        binding.btnCapture.setOnClickListener {
+            takePhoto()
+            binding.progressBar.visibility = View.VISIBLE
+        }
 
         outputDirectory = getOutputDirectory()
 
         cameraExecutor = Executors.newSingleThreadExecutor()
+
+        val factory = ViewModelFactory.getInstance(this)
+        viewModel = ViewModelProvider(this, factory).get(MainViewModel::class.java)
     }
 
     override fun onRequestPermissionsResult(
@@ -110,7 +94,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun takePhoto() {
         val randomNumber = (10000000..99999999).random()
-        val fieldFormat = SimpleDateFormat(FILENAME_FORMAT, Locale.ROOT
+        val fieldFormat = SimpleDateFormat(
+            FILENAME_FORMAT, Locale.ROOT
         ).format(System.currentTimeMillis()) + "-" + randomNumber.toString()
 
         // Get a stable reference of the modifiable image capture use case
@@ -136,55 +121,17 @@ class MainActivity : AppCompatActivity() {
                     val savedUri = Uri.fromFile(photoFile)
                     Log.d("File Uri", savedUri.toString())
 
-                    try {
-                        val bitmap = BitmapFactory.decodeFile(savedUri.path)
-                        bitmap.compress(Bitmap.CompressFormat.JPEG, 30, FileOutputStream(photoFile))
-                        Log.d("File Compressed", photoFile.toString())
-                    }catch (e: Throwable){
-                        Log.e("Error Compressing", "File compressing error", e)
-                    }
-
                     val riversRef: StorageReference = storageRef.child("$fieldFormat.jpg")
-                    riversRef.putFile(savedUri)
-                        .addOnSuccessListener { uri ->
-                            val downloadUrl: UploadTask.TaskSnapshot? = uri
-                            Log.d("Image on Storage", "URL: $downloadUrl")
-                            Toast.makeText(baseContext, "Upload success!", Toast.LENGTH_SHORT)
-                                .show();
-                        }
-                        .addOnFailureListener{
-                            Toast.makeText(baseContext, it.message, Toast.LENGTH_SHORT).show()
-                        }
+                    CoroutineScope(Dispatchers.IO).launch {
+                        viewModel.addImage(riversRef, savedUri)
+                    }
 
                     val msg = "Photo capture succeeded: $savedUri"
                     Log.d(TAG, msg)
                 }
             })
 
-//        Handler(Looper.getMainLooper()).postDelayed({
-//            db.collection("sign-language")
-//                .document(SimpleDateFormat(FILENAME_FORMAT, Locale.ROOT).format(System.currentTimeMillis()))
-//                .get()
-//                .addOnCompleteListener {
-//                    if(it.isSuccessful){
-//                        val doc = it.result
-//
-//                        if(doc?.exists() == true){
-//                            textResult = doc.get(fieldFormat)
-//                            binding.txtResult.text = textResult.toString()
-//                            Log.d("Read Firestore", textResult.toString())
-//                            Log.d("Field", fieldFormat)
-//                            Log.d("Document Result", doc.toString())
-//                        }
-//                    }
-//                }
-//                .addOnFailureListener {
-//                    Log.e("Error Read", "Error read data from firestore", it)
-//                }
-//        }, 3200)
-
-        db.collection("sign-language")
-            .addSnapshotListener { value, error ->
+        viewModel.result.addSnapshotListener { value, error ->
             if(error != null){
                 Log.e("Snapshot Error", "Error snapshot", error)
             }
@@ -193,9 +140,11 @@ class MainActivity : AppCompatActivity() {
                 when(dc.type){
                     DocumentChange.Type.MODIFIED -> {
                         binding.txtResult.text = dc.document.get(fieldFormat).toString()
+                        binding.progressBar.visibility = View.GONE
                         Log.d("Field", fieldFormat)
                         Log.d("Firestore changed", dc.document.get(fieldFormat).toString())
                     }
+                    else -> Log.d("No Action", "No Modification")
                 }
             }
         }
@@ -247,68 +196,6 @@ class MainActivity : AppCompatActivity() {
         return if (mediaDir != null && mediaDir.exists())
             mediaDir else filesDir
     }
-
-    private fun rotatedImage(bitmap: Bitmap, angle: Float): Bitmap{
-        val matrix = Matrix()
-        matrix.postRotate(angle)
-        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
-    }
-
-    private fun convertUriToBitmap(imageUri: Uri): Bitmap?{
-        contentResolver.notifyChange(imageUri, null)
-        val cr: ContentResolver = contentResolver
-
-        return try {
-            android.provider.MediaStore.Images.Media.getBitmap(cr, imageUri)
-        } catch (e: Exception){
-            e.printStackTrace()
-            null
-        }
-    }
-
-//    private fun swapCamera() {
-//        var camFacing = CameraCharacteristics.LENS_FACING_BACK
-//        camFacing = if(camFacing == CameraCharacteristics.LENS_FACING_BACK){
-//            CameraCharacteristics.LENS_FACING_FRONT
-//        } else{
-//            CameraCharacteristics.LENS_FACING_BACK
-//        }
-//        closeCamera()
-//        connectCamera()
-//    }
-//
-//    private fun connectCamera() {
-//        val cameraManager: CameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
-//        val cameraID = cameraManager.cameraIdList
-//
-//        try{
-//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
-//                if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED){
-//                    cameraManager.openCamera(cameraID, cameraCallback, bgHandler)
-//                } else{
-//                    if(shouldShowRequestPermissionRationale(Manifest.permission.CAMERA)){
-//                        Toast.makeText(this, "Required access to use camera", Toast.LENGTH_SHORT).show()
-//                    }
-//                    requestPermissions(
-//                        arrayOf(
-//                            Manifest.permission.CAMERA,
-//                            Manifest.permission.RECORD_AUDIO
-//                        ), REQUEST_CAMERA_PERMISSION)
-//                }
-//            } else{
-//                cameraManager.openCamera(cameraID, cameraCallback, bgHandler)
-//            }
-//        } catch (e: CameraAccessException){
-//            e.printStackTrace()
-//        }
-//    }
-//
-//    private fun closeCamera() {
-//        if(deviceCamera != null){
-//            cameraDevice.close()
-//            cameraDevice = null
-//        }
-//    }
 
     override fun onDestroy() {
         super.onDestroy()

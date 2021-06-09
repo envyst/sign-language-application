@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    tools:context=".activity.MainActivity">
 
     <androidx.camera.view.PreviewView
         android:id="@+id/view_finder"
@@ -21,7 +21,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         android:alpha="1"
-        />
+        android:contentDescription="@string/button_capture_background" />
 
     <ImageView
         android:id="@+id/btn_capture"
@@ -35,17 +35,8 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.97" />
-
-    <ImageView
-        android:id="@+id/switch_camera"
-        android:layout_width="45dp"
-        android:layout_height="45dp"
-        android:src="@drawable/switch_camera"
-        app:layout_constraintBottom_toBottomOf="@+id/btn_capture"
-        app:layout_constraintEnd_toStartOf="@+id/btn_capture"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/btn_capture"/>
+        app:layout_constraintVertical_bias="0.97"
+        android:contentDescription="@string/capture_button" />
 
     <ImageView
         android:id="@+id/img_txt_bg"
@@ -55,7 +46,8 @@
         android:background="@color/black_overlay"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        android:contentDescription="@string/background_result" />
 
     <TextView
         android:id="@+id/txt_result"
@@ -70,5 +62,15 @@
         app:layout_constraintEnd_toEndOf="@id/view_finder"
         app:layout_constraintStart_toStartOf="@id/view_finder"
         app:layout_constraintTop_toTopOf="@id/view_finder" />
+
+    <ProgressBar
+        android:id="@+id/progress_bar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

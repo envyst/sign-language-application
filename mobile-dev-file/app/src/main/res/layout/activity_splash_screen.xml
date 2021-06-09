@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/main_color"
-    tools:context=".SplashScreenActivity">
+    tools:context=".activity.SplashScreenActivity">
 
     <ImageView
         android:id="@+id/img_logo"
@@ -17,6 +17,7 @@
         app:layout_constraintHorizontal_bias="0.268"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.473" />
+        app:layout_constraintVertical_bias="0.473"
+        android:contentDescription="@string/logo_application" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
