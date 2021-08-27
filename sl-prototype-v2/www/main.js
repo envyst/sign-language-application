@@ -1,3 +1,4 @@
+load_modell();
 $(document).ready(function () {
     // Init
     $('.image-section').hide();
@@ -12,6 +13,8 @@ $(document).ready(function () {
                 $('#imagePreview').css('background-image', 'url(' + e.target.result + ')');
                 $('#imagePreview').hide();
                 $('#imagePreview').fadeIn(650);
+                imageFile = e.target.result;
+                // console.log(e.target.files);
             }
             reader.readAsDataURL(input.files[0]);
         }
@@ -29,7 +32,7 @@ $(document).ready(function () {
 //        var form_data = new FormData($('#upload-file')[0]);
 
         // Show loading animation
-        $(this).hide();
+        // $(this).hide();
         $('.loader').show();
         // const snapshot = await db.collection('skin-cancer-classification').get();
         app();
@@ -40,11 +43,7 @@ $(document).ready(function () {
         // Get and display the result
         $('.loader').hide();
         $('#result').fadeIn(600);
-        $('#result').text(' Result:  ' + letters);
-    });
-
-    $('#btn-reset').click(function(){
-        imageFile.dispose();
+        // $('#result').text(' Result:  ' + letters);
     });
 
 });
