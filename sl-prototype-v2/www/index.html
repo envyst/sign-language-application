@@ -1,0 +1,45 @@
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>SL-Recognition-v2</title>
+    <link href="https://cdn.bootcss.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.bootcss.com/popper.js/1.12.9/umd/popper.min.js"></script>
+    <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdn.bootcss.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+    <link href="css.css" rel="stylesheet"> 
+    <script src="https://unpkg.com/@tensorflow/tfjs"></script>
+    <script src="https://unpkg.com/@tensorflow/tfjs-automl"></script>
+</head>
+<body >
+<header>
+    <h1>Sign Language Recognition v2</h1>
+    <p>Prediksi Huruf</p>
+</header>
+ 
+    <!-- <video autoplay playsinline muted id="webcam" width="224" height="224"> 
+    </video> -->
+    <form id="upload-file" method="post" enctype="multipart/form-data">
+            <label for="imageUpload" class="upload-label">
+                Pilih Foto
+            </label>
+            <input type="file" name="imageUpload" id="imageUpload" multiple="" accept="image/*">
+    </form>
+    <div class="image-section" style="display:none;">
+        <div class="img-preview">
+            <div id="imagePreview">
+            </div>
+        </div>
+        <div>
+            <button type="button" class="btn btn-primary btn-lg " id="btn-predict"> Predict! </button>
+            <button type="button" class="btn btn-primary btn-lg " id="btn-reset"> Reset </button>
+        </div>
+    </div>
+    <div class="loader" style="display:none;"></div>
+    <h3 id="result"></h3>
+    
+    <script src= "index.js"></script>
+    <script src= "main.js" type="text/javascript"></script>
+</body>
+</html>
